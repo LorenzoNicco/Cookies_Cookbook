@@ -1,9 +1,10 @@
-﻿//Console.WriteLine("Create a new cookie recipe! Available ingredients are:");
-
+﻿using Cookies_Cookbook.Recipies;
+using Cookies_Cookbook.Recipies.Ingredients;
+using System.Collections.Generic;
 using System.Reflection.Metadata;
 
 var cookieApp = new CookieApp(new RecipiesDb(), new UserInteractionWithRecipies());
-cookieApp.Run();
+cookieApp.Run("recipies.txt");
 
 Console.ReadKey();
 
@@ -23,12 +24,13 @@ public class CookieApp
     }
 
     //METODO CON LOGICA DI FUNZIONAMENTO DELL'APP
-    public void Run()
+    public void Run(string filePath)
     {
         //Legge il contenuto del file dove sono salvate le ricette
         var recipiesList = _recipiesDb.Read(filePath);
         //Stampa le ricette esistenti
         _userInteractionWithRecipies.PrintExistingRecipies(recipiesList);
+        /*
         //Chiede all'utente di creare una nuova ricetta
         _userInteractionWithRecipies.AskToMakeRecipe();
         //Prende gli ingredienti scelti dall'utente
@@ -49,7 +51,7 @@ public class CookieApp
         {
             _userInteractionWithRecipies.ShowMessage("No ingredients have been selected. Recipe will not be saved.")
         }
-
+        */
         //Chiusura dell'app
         _userInteractionWithRecipies.Exit();
     }
@@ -60,6 +62,7 @@ public interface IUserInteractionWithRecipies
 {
     void ShowMessage(string message);
     void Exit();
+    void PrintExistingRecipies(IEnumerable<Recipie> recipiesList);
 }
 
 //CLASSE PER L'INTERAZIONE CON L'UTENTE
@@ -77,14 +80,48 @@ public class UserInteractionWithRecipies : IUserInteractionWithRecipies
         Console.WriteLine("Press any key to close");
         Console.ReadKey();
     }
+
+    public void PrintExistingRecipies(IEnumerable<Recipie> recipiesList)
+    {
+        if(recipiesList.Count() > 0)
+        {
+            Console.WriteLine($"Existing recipies are: " + Environment.NewLine);
+
+            var counter = 1;
+
+            foreach(var singleRecipie in recipiesList)
+            {
+                Console.WriteLine($"*****{counter}*****");
+                Console.WriteLine(singleRecipie);
+                Console.WriteLine();
+                ++counter;
+            }
+        }
+    }
 }
 
 //INTERFACCIA PER IL SALVATAGGIO DELLE RICETTE
 public interface IRecipiesDb
 {
+    List<Recipie> Read(string filePath);
 }
 
 //CLASSE PER IL SALVATAGGIO DELLE RICETTE
 public class RecipiesDb : IRecipiesDb
 {
+    public List<Recipie> Read(string filePath)
+    {
+        return new List<Recipie>
+        {
+            new Recipie(new List<Ingredient>{
+                new WheatFlour(),
+                new Butter(),
+                new Sugar()
+            }),
+            new Recipie(new List<Ingredient>{
+                new CocoaPowder(),
+                new Sugar()
+            })
+        };
+    }
 }

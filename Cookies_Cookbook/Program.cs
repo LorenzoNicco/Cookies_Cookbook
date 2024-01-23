@@ -3,7 +3,7 @@ using Cookies_Cookbook.Recipies.Ingredients;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 
-var cookieApp = new CookieApp(new RecipiesDb(), new UserInteractionWithRecipies());
+var cookieApp = new CookieApp(new RecipiesDb(), new UserInteractionWithRecipies(new IngredientsRegister()));
 cookieApp.Run("recipies.txt");
 
 Console.ReadKey();
@@ -30,9 +30,9 @@ public class CookieApp
         var recipiesList = _recipiesDb.Read(filePath);
         //Stampa le ricette esistenti
         _userInteractionWithRecipies.PrintExistingRecipies(recipiesList);
-        /*
         //Chiede all'utente di creare una nuova ricetta
         _userInteractionWithRecipies.AskToMakeRecipe();
+        /*
         //Prende gli ingredienti scelti dall'utente
         var ingredients = _userInteractionWithRecipies.ReadIngredientsFromUser();
 
@@ -63,11 +63,35 @@ public interface IUserInteractionWithRecipies
     void ShowMessage(string message);
     void Exit();
     void PrintExistingRecipies(IEnumerable<Recipie> recipiesList);
+    void AskToMakeRecipe();
+}
+
+public class IngredientsRegister
+{
+    public IEnumerable<Ingredient> All { get; } = new List<Ingredient>
+    {
+        new WheatFlour(),
+        new CoconoutFlour(),
+        new Butter(),
+        new Chocolate(),
+        new Sugar(),
+        new Cardamom(),
+        new Cinnamon(),
+        new CocoaPowder(),
+    };
 }
 
 //CLASSE PER L'INTERAZIONE CON L'UTENTE
 public class UserInteractionWithRecipies : IUserInteractionWithRecipies
 {
+    private readonly IngredientsRegister _ingredientsRegister;
+
+    //Costruttore
+    public UserInteractionWithRecipies(IngredientsRegister ingredientsRegister)
+    {
+        _ingredientsRegister = ingredientsRegister;
+    }
+
     //Metodo per stampare a schermo il messaggio
     public void ShowMessage(string message)
     {
@@ -96,6 +120,16 @@ public class UserInteractionWithRecipies : IUserInteractionWithRecipies
                 Console.WriteLine();
                 ++counter;
             }
+        }
+    }
+
+    public void AskToMakeRecipe()
+    {
+        Console.WriteLine("Create a new cookie recipe! Available ingredients are:");
+
+        foreach(var ingredient in _ingredientsRegister.All)
+        {
+            Console.WriteLine(ingredient);
         }
     }
 }

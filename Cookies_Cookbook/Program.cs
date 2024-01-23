@@ -2,7 +2,7 @@
 
 using System.Reflection.Metadata;
 
-var cookieApp = new CookieApp();
+var cookieApp = new CookieApp(new RecipiesDb(), new UserInteractionWithRecipies());
 cookieApp.Run();
 
 Console.ReadKey();
@@ -11,12 +11,12 @@ Console.ReadKey();
 public class CookieApp
 {
     //Area di salvataggio delle ricette
-    private readonly RecipiesDb _recipiesDb;
+    private readonly IRecipiesDb _recipiesDb;
     //Interazione con l'utente
-    private readonly UserInteractionWithRecipies _userInteractionWithRecipies;
+    private readonly IUserInteractionWithRecipies _userInteractionWithRecipies;
 
     //Costruttore
-    public CookieApp(RecipiesDb recipiesDb, UserInteractionWithRecipies userInteractionWithRecipies)
+    public CookieApp(IRecipiesDb recipiesDb, IUserInteractionWithRecipies userInteractionWithRecipies)
     {
         _recipiesDb = recipiesDb;
         _userInteractionWithRecipies = userInteractionWithRecipies;
@@ -55,13 +55,37 @@ public class CookieApp
     }
 }
 
+//INTERFACCIA PER L'INTERAZIONE CON L'UTENTE
+public interface IUserInteractionWithRecipies
+{
+    void ShowMessage(string message);
+    void Exit();
+}
+
 //CLASSE PER L'INTERAZIONE CON L'UTENTE
-public class UserInteractionWithRecipies
+public class UserInteractionWithRecipies : IUserInteractionWithRecipies
+{
+    //Metodo per stampare a schermo il messaggio
+    public void ShowMessage(string message)
+    {
+        Console.WriteLine(message);
+    }
+
+    //Metodo per chiudere l'app
+    public void Exit()
+    {
+        Console.WriteLine("Press any key to close");
+        Console.ReadKey();
+    }
+}
+
+//INTERFACCIA PER IL SALVATAGGIO DELLE RICETTE
+public interface IRecipiesDb
 {
 }
 
 //CLASSE PER IL SALVATAGGIO DELLE RICETTE
-public class RecipiesDb
+public class RecipiesDb : IRecipiesDb
 {
 }
 

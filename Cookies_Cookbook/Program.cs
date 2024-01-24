@@ -32,26 +32,25 @@ public class CookieApp
         _userInteractionWithRecipies.PrintExistingRecipies(recipiesList);
         //Chiede all'utente di creare una nuova ricetta
         _userInteractionWithRecipies.AskToMakeRecipe();
-        /*
         //Prende gli ingredienti scelti dall'utente
         var ingredients = _userInteractionWithRecipies.ReadIngredientsFromUser();
 
-        if(ingredients.Count > 0)
+        if(ingredients.Count() > 0)
         {
             //Prende gli ingredienti scelti dall'utente e li salva nel file
-            var recipies = new Recipie(ingredients);
+            var recipie = new Recipie(ingredients);
             recipiesList.Add(recipie);
-            _recipiesDb.Write(filePath, recipieList);
+           // _recipiesDb.Write(filePath, recipieList);
 
             //Avvisa l'utente che la ricetta è stata salvata nel file
             _userInteractionWithRecipies.ShowMessage("Recipe added:");
-            _userInteractionWithRecipies.ShowMessage(recipe.ToString());
+            _userInteractionWithRecipies.ShowMessage(recipie.ToString());
         }
         else
         {
-            _userInteractionWithRecipies.ShowMessage("No ingredients have been selected. Recipe will not be saved.")
+            _userInteractionWithRecipies.ShowMessage("No ingredients have been selected. Recipe will not be saved.");
         }
-        */
+        
         //Chiusura dell'app
         _userInteractionWithRecipies.Exit();
     }
@@ -64,10 +63,12 @@ public interface IUserInteractionWithRecipies
     void Exit();
     void PrintExistingRecipies(IEnumerable<Recipie> recipiesList);
     void AskToMakeRecipe();
+    IEnumerable<Ingredient> ReadIngredientsFromUser();
 }
 
 public class IngredientsRegister
 {
+    //Inizializzo una interfaccia IEnumerable di ingredienti con le classi create in precedenza
     public IEnumerable<Ingredient> All { get; } = new List<Ingredient>
     {
         new WheatFlour(),
@@ -79,6 +80,21 @@ public class IngredientsRegister
         new Cinnamon(),
         new CocoaPowder(),
     };
+
+    //Metodo per prendere l'ingrediente tramite il numero inserito dall'utente
+    public Ingredient GetIngredientById(int id)
+    {
+        //Per ogni ingrediente nell'IEnumerable, controllo che l'input inserito dall'utente corrisponda ad un id, altrimenti ritorno null
+        foreach(var ingredient in All)
+        {
+            if (ingredient.ID == id)
+            {
+                return ingredient;
+            }
+        }
+
+        return null;
+    }
 }
 
 //CLASSE PER L'INTERAZIONE CON L'UTENTE
@@ -131,6 +147,41 @@ public class UserInteractionWithRecipies : IUserInteractionWithRecipies
         {
             Console.WriteLine(ingredient);
         }
+    }
+
+    public IEnumerable<Ingredient> ReadIngredientsFromUser()
+    {
+        //Inizializzo una flag di controllo per fermare il loop
+        bool stopFlag = false;
+        //Dichiaro una lista di ingredienti
+        var ingredients = new List<Ingredient>();
+
+        while(!stopFlag)
+        {
+            Console.WriteLine("Add an ingredient by its ID or type anything else if finished.");
+
+            //Raccolgo il numero inserito dall'utente
+            var userInput = Console.ReadLine();
+
+            //Se l'utente ha inserito un numero vado a prendere l'ingrediente, altrimenti fermo il loop
+            if(int.TryParse(userInput, out int id))
+            {
+                var selectedIngredient = _ingredientsRegister.GetIngredientById(id);
+
+                //Controllo che l'utente abbia inserito un id valido
+                if(selectedIngredient is not null)
+                {
+                    //Aggiungo l'ingrediente alla lista
+                    ingredients.Add(selectedIngredient);
+                }    
+            }
+            else
+            {
+                stopFlag = true;
+            }
+        }
+
+        return ingredients;
     }
 }
 

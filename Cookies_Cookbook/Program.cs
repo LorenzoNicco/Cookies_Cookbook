@@ -3,10 +3,15 @@ using Cookies_Cookbook.Recipies.Ingredients;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 
-var cookieApp = new CookieApp(new RecipiesDb(), new UserInteractionWithRecipies(new IngredientsRegister()));
-cookieApp.Run("recipies.txt");
+//Inizializzo una variabile contenente IngredientsRegister per usarlo piu volte
+var ingredientsRegister = new IngredientsRegister();
 
-Console.ReadKey();
+//Inizializzo l'app e la faccio partire, indicando il percorso del file dove salvare le ricette
+var cookieApp = new CookieApp(
+    new RecipiesDb(new StringsTextualRepository(), ingredientsRegister), 
+    new UserInteractionWithRecipies(ingredientsRegister)
+);
+cookieApp.Run("recipies.txt");
 
 //CLASSE GENERALE DELL'APP
 public class CookieApp
@@ -40,7 +45,7 @@ public class CookieApp
             //Prende gli ingredienti scelti dall'utente e li salva nel file
             var recipie = new Recipie(ingredients);
             recipiesList.Add(recipie);
-           // _recipiesDb.Write(filePath, recipieList);
+            _recipiesDb.Write(filePath, recipiesList);
 
             //Avvisa l'utente che la ricetta è stata salvata nel file
             _userInteractionWithRecipies.ShowMessage("Recipe added:");
@@ -66,7 +71,16 @@ public interface IUserInteractionWithRecipies
     IEnumerable<Ingredient> ReadIngredientsFromUser();
 }
 
-public class IngredientsRegister
+//INTERFACCIA PER IL REGISTRO DELLE RICETTE
+public interface IIngredientsRegister
+{
+    IEnumerable<Ingredient> All { get; }
+
+    Ingredient GetIngredientById(int id);
+}
+
+//CLASSE PER IL REGISTRO DELLE RICETTE
+public class IngredientsRegister : IIngredientsRegister
 {
     //Inizializzo una interfaccia IEnumerable di ingredienti con le classi create in precedenza
     public IEnumerable<Ingredient> All { get; } = new List<Ingredient>
@@ -85,7 +99,7 @@ public class IngredientsRegister
     public Ingredient GetIngredientById(int id)
     {
         //Per ogni ingrediente nell'IEnumerable, controllo che l'input inserito dall'utente corrisponda ad un id, altrimenti ritorno null
-        foreach(var ingredient in All)
+        foreach (var ingredient in All)
         {
             if (ingredient.ID == id)
             {
@@ -100,10 +114,10 @@ public class IngredientsRegister
 //CLASSE PER L'INTERAZIONE CON L'UTENTE
 public class UserInteractionWithRecipies : IUserInteractionWithRecipies
 {
-    private readonly IngredientsRegister _ingredientsRegister;
+    private readonly IIngredientsRegister _ingredientsRegister;
 
     //Costruttore
-    public UserInteractionWithRecipies(IngredientsRegister ingredientsRegister)
+    public UserInteractionWithRecipies(IIngredientsRegister ingredientsRegister)
     {
         _ingredientsRegister = ingredientsRegister;
     }
@@ -189,24 +203,110 @@ public class UserInteractionWithRecipies : IUserInteractionWithRecipies
 public interface IRecipiesDb
 {
     List<Recipie> Read(string filePath);
+    void Write(string filePath, List<Recipie> recipieList);
 }
 
 //CLASSE PER IL SALVATAGGIO DELLE RICETTE
 public class RecipiesDb : IRecipiesDb
 {
+    //Creo la dependency per la Stringsrepository
+    private readonly IStringsRepository _stringsRepository;
+
+    //Creo la dependency per IngredientsRegister
+    private readonly IIngredientsRegister _ingredientsRegister;
+
+    //Inizializzo una costante per il separatore delle stringhe
+    private const string Separator = ",";
+
+    //Costruttore
+    public RecipiesDb(IStringsRepository stringsRepository, IIngredientsRegister ingredientsRegister)
+    {
+        _stringsRepository = stringsRepository;
+        _ingredientsRegister = ingredientsRegister;
+    }
+
+    //Metodo per la lettura del file contenente le ricette
     public List<Recipie> Read(string filePath)
     {
-        return new List<Recipie>
+        List<string> recipiesFromFile = _stringsRepository.Read(filePath);
+        var recipies = new List<Recipie>();
+
+        foreach(var singleRecipieFromFIle in recipiesFromFile)
         {
-            new Recipie(new List<Ingredient>{
-                new WheatFlour(),
-                new Butter(),
-                new Sugar()
-            }),
-            new Recipie(new List<Ingredient>{
-                new CocoaPowder(),
-                new Sugar()
-            })
-        };
+            var recipie = RecipieFromString(singleRecipieFromFIle);
+            recipies.Add(recipie);
+        }
+
+        return recipies;
+    }
+
+    private Recipie RecipieFromString(string singleRecipieFromFIle)
+    {
+        //Spezzo la stringa della ricetta per ricavare gli id
+        var textualIds = singleRecipieFromFIle.Split(Separator);
+        //Dichiaro una lista di ingredienti
+        var ingredients = new List<Ingredient>();
+
+        //Parso gli id ricavati in int, li uso per ricavare l'ingrediente corrispondente e lo aggiungo alla lista
+        foreach(var singleTextualId in textualIds)
+        {
+            var id = int.Parse(singleTextualId);
+            var ingredient = _ingredientsRegister.GetIngredientById(id);
+            ingredients.Add(ingredient);
+        }
+
+        return new Recipie(ingredients);
+    }
+
+    //Metodo per scrivere la lista di id degli ingredienti nel file
+    public void Write(string filePath, List<Recipie> recipieList)
+    {
+        //Dichiaro la lista dove salverò gli id degli ingredienti
+        var recipiesAsStrings = new List<string>();
+
+        //Per ogni ricetta nella lista delle ricette
+        foreach(var singleRecipie in recipieList)
+        {
+            //Dichiaro una lista di id per salvare gli id di ogni ingrediente della ricetta
+            var allIds = new List<int>();
+            foreach(var ingredient in singleRecipie.Ingredients)
+            {
+                allIds.Add(ingredient.ID);
+            }
+
+            //Unisco gli id scelti in una stringa unica per ogni ricetta e aggiungo tutto alla lista delle ricette
+            recipiesAsStrings.Add(string.Join(Separator, allIds));
+        }
+
+        //Salvo la lista delle ricette con gli id nel file al percorso indicato
+        _stringsRepository.Write(filePath, recipiesAsStrings);
+    }
+}
+
+public interface IStringsRepository
+{
+    List<string> Read(string filePath);
+    void Write(string filePath, List<string> strings);
+}
+
+public class StringsTextualRepository : IStringsRepository
+{
+    private static readonly string Separator = Environment.NewLine;
+
+    public List<string> Read(string filePath)
+    {
+        //Controllo se il file esiste
+        if(File.Exists(filePath))
+        {
+            var fileContent = File.ReadAllText(filePath);
+            return fileContent.Split(Separator).ToList();
+        }
+
+        return new List<string> ();
+    }
+
+    public void Write(string filePath, List<string> strings)
+    {
+        File.WriteAllText(filePath, string.Join(Separator, strings));
     }
 }

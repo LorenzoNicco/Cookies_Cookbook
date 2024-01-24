@@ -4,17 +4,54 @@ using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Text.Json;
 
+//Costante per la scelta del formato di file
+const FileFormat Format = FileFormat.Txt;
+
+//Operatore ternario per la scelta di quale repository inizializzare in base al formato (non possiamo usare un tipo generico)
+IStringsRepository stringsRepository = Format == FileFormat.Json ? new StringsJsonRepository() : new StringsTextualRepository();
+
+//Inizializzo il nome del file e lo uso come argomento per creare dinamicamente il percorso
+const string FileName = "reicpies";
+var fileMetaData = new FileMetaData(FileName, Format);
+
 //Inizializzo una variabile contenente IngredientsRegister per usarlo piu volte
 var ingredientsRegister = new IngredientsRegister();
 
 //Inizializzo l'app e la faccio partire, indicando il percorso del file dove salvare le ricette
 var cookieApp = new CookieApp(
-    //new RecipiesDb(new StringsTextualRepository(), ingredientsRegister), //Usiamo questo per salvare in txt
-    new RecipiesDb(new StringsJsonRepository(), ingredientsRegister), //Usiamo questo per salvare in json
+    new RecipiesDb(stringsRepository, ingredientsRegister),
     new UserInteractionWithRecipies(ingredientsRegister)
 );
-//cookieApp.Run("recipies.txt"); //Usiamo questo per salvare in txt
-cookieApp.Run("recipies.json"); //Usiamo questo per salvare in json
+cookieApp.Run(fileMetaData.ToString());
+
+//CLASSE PER LA COSTRUZIONE DEL PERCORSO FILE (NOME+FORMATO)
+public class FileMetaData
+{
+    public string Name { get; }
+    public FileFormat Format { get; }
+
+    public FileMetaData(string name, FileFormat format)
+    {
+        Name = name;
+        Format = format;
+    }
+
+    //ToPath() serve a convertire le due proprietà in un percorso
+    public String ToPath() => $"{Name}.{Format.AsFileExtension()}";
+}
+
+//CLASSE PER SWITCHARE TRA I FORMATI DI FILE
+public static class FileFormatExtension
+{
+    public static string AsFileExtension(this FileFormat fileFormat) => fileFormat == FileFormat.Json ? "json" : "txt";
+}
+
+//Enum per i formati disponibili per il salvataggio
+public enum FileFormat
+{
+    Json,
+    Txt
+}
 
 //CLASSE GENERALE DELL'APP
 public class CookieApp
@@ -294,31 +331,8 @@ public interface IStringsRepository
     void Write(string filePath, List<string> strings);
 }
 
-//CLASSE PER IL SALVATAGGIO NEL FILE TXT
-public class StringsTextualRepository : IStringsRepository
-{
-    private static readonly string Separator = Environment.NewLine;
-
-    public List<string> Read(string filePath)
-    {
-        //Controllo se il file esiste
-        if(File.Exists(filePath))
-        {
-            var fileContent = File.ReadAllText(filePath);
-            return fileContent.Split(Separator).ToList();
-        }
-
-        return new List<string> ();
-    }
-
-    public void Write(string filePath, List<string> strings)
-    {
-        File.WriteAllText(filePath, string.Join(Separator, strings));
-    }
-}
-
-//CLASSE PER IL SALVATAGGIO NEL FILE JSON
-public class StringsJsonRepository : IStringsRepository
+//CLASSE ASTRATTA PER IL SALVATAGGIO NEL FILE
+public abstract class StringsRepository : IStringsRepository
 {
     public List<string> Read(string filePath)
     {
@@ -326,14 +340,49 @@ public class StringsJsonRepository : IStringsRepository
         if (File.Exists(filePath))
         {
             var fileContent = File.ReadAllText(filePath);
-            return JsonSerializer.Deserialize<List<string>>(fileContent);
+            return TextToListOfStrings(fileContent);
         }
 
         return new List<string>();
     }
 
+    protected abstract List<string> TextToListOfStrings(string fileContent);
+
     public void Write(string filePath, List<string> strings)
     {
-        File.WriteAllText(filePath, JsonSerializer.Serialize(strings));
+        File.WriteAllText(filePath, ListOfStringsToText(strings));
+    }
+
+    protected abstract string ListOfStringsToText(List<string> strings);
+}
+
+//CLASSE PER IL SALVATAGGIO NEL FORMATO TXT
+public class StringsTextualRepository : StringsRepository
+{
+    //Inizializzo un separatore
+    private static readonly string Separator = Environment.NewLine;
+
+    protected override string ListOfStringsToText(List<string> strings)
+    {
+        return string.Join(Separator, strings);
+    }
+
+    protected override List<string> TextToListOfStrings(string fileContent)
+    {
+        return fileContent.Split(Separator).ToList();
+    }
+}
+
+//CLASSE PER IL SALVATAGGIO NEL FORMATO JSON
+public class StringsJsonRepository : StringsRepository
+{
+    protected override string ListOfStringsToText(List<string> strings)
+    {
+        return JsonSerializer.Serialize(strings);
+    }
+
+    protected override List<string> TextToListOfStrings(string fileContent)
+    {
+        return JsonSerializer.Deserialize<List<string>>(fileContent);
     }
 }

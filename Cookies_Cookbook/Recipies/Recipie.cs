@@ -1,25 +1,24 @@
 ﻿using Cookies_Cookbook.Recipies.Ingredients;
 
-namespace Cookies_Cookbook.Recipies
+namespace Cookies_Cookbook.Recipies;
+
+public class Recipie
 {
-    public class Recipie
+    public IEnumerable<Ingredient> Ingredients { get; }
+
+    public Recipie(IEnumerable<Ingredient> ingredients)
     {
-        public IEnumerable<Ingredient> Ingredients { get; }
+        Ingredients = ingredients;
+    }
 
-        public Recipie(IEnumerable<Ingredient> ingredients)
+    //Sovreascrittura del comportamento base del metodo ToString() per stampare la lista degli ingredienti
+    public override string ToString()
+    {
+        var steps = new List<string>();
+        foreach (var ingredient in Ingredients)
         {
-            Ingredients = ingredients;
+            steps.Add($"{ingredient.Name} . {ingredient.InstructionOfPreparing}");
         }
-
-        //Sovreascrittura del comportamento base del metodo ToString() per stampare la lista degli ingredienti
-        public override string ToString()
-        {
-            var steps = new List<string>();
-            foreach (var ingredient in Ingredients)
-            {
-                steps.Add($"{ingredient.Name} . {ingredient.InstructionOfPreparing}");
-            }
-            return string.Join(Environment.NewLine, steps);
-        }
+        return string.Join(Environment.NewLine, steps);
     }
 }

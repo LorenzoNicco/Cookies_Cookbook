@@ -2,16 +2,19 @@
 using Cookies_Cookbook.Recipies.Ingredients;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
+using System.Text.Json;
 
 //Inizializzo una variabile contenente IngredientsRegister per usarlo piu volte
 var ingredientsRegister = new IngredientsRegister();
 
 //Inizializzo l'app e la faccio partire, indicando il percorso del file dove salvare le ricette
 var cookieApp = new CookieApp(
-    new RecipiesDb(new StringsTextualRepository(), ingredientsRegister), 
+    //new RecipiesDb(new StringsTextualRepository(), ingredientsRegister), //Usiamo questo per salvare in txt
+    new RecipiesDb(new StringsJsonRepository(), ingredientsRegister), //Usiamo questo per salvare in json
     new UserInteractionWithRecipies(ingredientsRegister)
 );
-cookieApp.Run("recipies.txt");
+//cookieApp.Run("recipies.txt"); //Usiamo questo per salvare in txt
+cookieApp.Run("recipies.json"); //Usiamo questo per salvare in json
 
 //CLASSE GENERALE DELL'APP
 public class CookieApp
@@ -135,6 +138,7 @@ public class UserInteractionWithRecipies : IUserInteractionWithRecipies
         Console.ReadKey();
     }
 
+    //Metodo per stampare le ricette esistenti
     public void PrintExistingRecipies(IEnumerable<Recipie> recipiesList)
     {
         if(recipiesList.Count() > 0)
@@ -163,6 +167,7 @@ public class UserInteractionWithRecipies : IUserInteractionWithRecipies
         }
     }
 
+    //Metodo per creare la lista degli ingredienti scelti dall'utente
     public IEnumerable<Ingredient> ReadIngredientsFromUser()
     {
         //Inizializzo una flag di controllo per fermare il loop
@@ -289,6 +294,7 @@ public interface IStringsRepository
     void Write(string filePath, List<string> strings);
 }
 
+//CLASSE PER IL SALVATAGGIO NEL FILE TXT
 public class StringsTextualRepository : IStringsRepository
 {
     private static readonly string Separator = Environment.NewLine;
@@ -308,5 +314,26 @@ public class StringsTextualRepository : IStringsRepository
     public void Write(string filePath, List<string> strings)
     {
         File.WriteAllText(filePath, string.Join(Separator, strings));
+    }
+}
+
+//CLASSE PER IL SALVATAGGIO NEL FILE JSON
+public class StringsJsonRepository : IStringsRepository
+{
+    public List<string> Read(string filePath)
+    {
+        //Controllo se il file esiste
+        if (File.Exists(filePath))
+        {
+            var fileContent = File.ReadAllText(filePath);
+            return JsonSerializer.Deserialize<List<string>>(fileContent);
+        }
+
+        return new List<string>();
+    }
+
+    public void Write(string filePath, List<string> strings)
+    {
+        File.WriteAllText(filePath, JsonSerializer.Serialize(strings));
     }
 }

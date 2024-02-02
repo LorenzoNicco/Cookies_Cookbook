@@ -45,23 +45,17 @@ public class RecipiesDb : IRecipiesDb
     public void Write(string filePath, List<Recipie> recipieList)
     {
         //Dichiaro la lista dove salverò gli id degli ingredienti
-        var recipiesAsStrings = new List<string>();
-
-        //Per ogni ricetta nella lista delle ricette
-        foreach (var singleRecipie in recipieList)
-        {
-            //Dichiaro una lista di id per salvare gli id di ogni ingrediente della ricetta
-            var allIds = new List<int>();
-            foreach (var ingredient in singleRecipie.Ingredients)
+        var recipiesAsStrings = recipieList
+            .Select(singleRecipie =>
             {
-                allIds.Add(ingredient.ID);
-            }
+                //Dichiaro una lista di id per salvare gli id di ogni ingrediente della ricetta
+                var allIds = singleRecipie.Ingredients
+                    .Select(ingredient => ingredient.ID);
 
-            //Unisco gli id scelti in una stringa unica per ogni ricetta e aggiungo tutto alla lista delle ricette
-            recipiesAsStrings.Add(string.Join(Separator, allIds));
-        }
+                return string.Join(Separator, allIds);
+            });
 
         //Salvo la lista delle ricette con gli id nel file al percorso indicato
-        _stringsRepository.Write(filePath, recipiesAsStrings);
+        _stringsRepository.Write(filePath, recipiesAsStrings.ToList());
     }
 }

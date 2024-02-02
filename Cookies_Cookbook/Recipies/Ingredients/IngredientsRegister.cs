@@ -20,14 +20,6 @@ public class IngredientsRegister : IIngredientsRegister
     public Ingredient GetIngredientById(int id)
     {
         //Per ogni ingrediente nell'IEnumerable, controllo che l'input inserito dall'utente corrisponda ad un id, altrimenti ritorno null
-        foreach (var ingredient in All)
-        {
-            if (ingredient.ID == id)
-            {
-                return ingredient;
-            }
-        }
-
-        return null;
+        return All.FirstOrDefault(ingredient => ingredient.ID == id);
     }
 }

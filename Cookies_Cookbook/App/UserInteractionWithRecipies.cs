@@ -34,15 +34,14 @@ public class UserInteractionWithRecipies : IUserInteractionWithRecipies
         {
             Console.WriteLine($"Existing recipies are: " + Environment.NewLine);
 
-            var counter = 1;
+            var allRecipiesAsStrings = recipiesList
+                .Select((recipie, index) =>
+$@"*****{index + 1}*****
+{recipie}");
 
-            foreach (var singleRecipie in recipiesList)
-            {
-                Console.WriteLine($"*****{counter}*****");
-                Console.WriteLine(singleRecipie);
-                Console.WriteLine();
-                ++counter;
-            }
+            Console.WriteLine(
+                string.Join(Environment.NewLine, allRecipiesAsStrings));
+            Console.WriteLine();
         }
     }
 

@@ -25,16 +25,9 @@ public class RecipiesDb : IRecipiesDb
     //Metodo per la lettura del file contenente le ricette
     public List<Recipie> Read(string filePath)
     {
-        List<string> recipiesFromFile = _stringsRepository.Read(filePath);
-        var recipies = new List<Recipie>();
-
-        foreach (var singleRecipieFromFIle in recipiesFromFile)
-        {
-            var recipie = RecipieFromString(singleRecipieFromFIle);
-            recipies.Add(recipie);
-        }
-
-        return recipies;
+        return _stringsRepository.Read(filePath)
+            .Select(RecipieFromString)
+            .ToList();
     }
 
     private Recipie RecipieFromString(string singleRecipieFromFIle)

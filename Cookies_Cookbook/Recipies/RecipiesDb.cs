@@ -32,18 +32,11 @@ public class RecipiesDb : IRecipiesDb
 
     private Recipie RecipieFromString(string singleRecipieFromFIle)
     {
-        //Spezzo la stringa della ricetta per ricavare gli id
-        var textualIds = singleRecipieFromFIle.Split(Separator);
-        //Dichiaro una lista di ingredienti
-        var ingredients = new List<Ingredient>();
-
-        //Parso gli id ricavati in int, li uso per ricavare l'ingrediente corrispondente e lo aggiungo alla lista
-        foreach (var singleTextualId in textualIds)
-        {
-            var id = int.Parse(singleTextualId);
-            var ingredient = _ingredientsRegister.GetIngredientById(id);
-            ingredients.Add(ingredient);
-        }
+        //Spezzo la stringa della ricetta per ricavare gli id. Parso gli id ricavati in int, li uso per ricavare l'ingrediente corrispondente e lo aggiungo alla lista
+        var ingredients = singleRecipieFromFIle
+            .Split(Separator)
+            .Select(int.Parse)
+            .Select(_ingredientsRegister.GetIngredientById);
 
         return new Recipie(ingredients);
     }
